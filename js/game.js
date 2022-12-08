@@ -4,7 +4,7 @@
 let background;
 let backgroundDos;
 let player;
-let enemy;
+let enemies = [];
 let cursors;
 let spaceBar;
 let bullets = [];
@@ -36,10 +36,11 @@ function create() {
   player.setScale(PLAYER_SCALE);
 
   // enemy setup
-  enemy = this.add.image(SCREEN_WIDTH / 2, SCREEN_HEIGHT, "enemy");
+  const enemy = this.add.image(SCREEN_WIDTH / 2, SCREEN_HEIGHT, "enemy");
   enemy.setX((SCREEN_WIDTH - enemy.width * ENEMY_SCALE) / 2);
   enemy.setY((enemy.height * ENEMY_SCALE) / 2);
   enemy.setScale(ENEMY_SCALE);
+  enemies.push(enemy);
 
   //cursors map into game engine
   cursors = this.input.keyboard.createCursorKeys();
@@ -134,19 +135,7 @@ function moverBalas() {
     if (bullets[index].y < 0) {
       destroyBullet(index);
     } else {
-      const enemyHalfWidth = enemy.width / 2 * ENEMY_SCALE;
-      const enemyHalfHeight = enemy.height / 2 * ENEMY_SCALE;
-
-      if ((bullets[index].x > (enemy.x - enemyHalfWidth) && bullets[index].x < (enemy.x + enemyHalfWidth)) 
-          && (bullets[index].y < (enemy.y + enemyHalfHeight) && (bullets[index].y > (enemy.y - enemyHalfHeight)))){
-        explosion.setPosition(enemy.x, enemy.y);
-        explosion.explode();
-
-        enemy.destroy();
-        destroyBullet(index);
-      } else {
         index++;
-      }
     }
   }
 }
@@ -161,11 +150,22 @@ function disparar(engine) {
 
 function checkEnemyCollisions() {
   for (const b of bullets) {
-    const enemyHalfWidth = enemy.width / 2 * ENEMY_SCALE;
-    const enemyHalfHeight = enemy.height / 2 * ENEMY_SCALE;
+    let index = 0;
 
-    if ((b.x > (enemy.x - enemyHalfWidth) && b.x < (enemy.x + enemyHalfWidth)) && (b.y < (enemy.y + enemyHalfHeight) && (b.y > (enemy.y - enemyHalfHeight)))){
-      enemy.destroy();
+    while (index < enemies.length) {
+      const enemyHalfWidth = enemies[index].width / 2 * ENEMY_SCALE;
+      const enemyHalfHeight = enemies[index].height / 2 * ENEMY_SCALE;
+
+      if ((b.x > (enemies[index].x - enemyHalfWidth) && b.x < (enemies[index].x + enemyHalfWidth)) 
+          && (b.y < (enemies[index].y + enemyHalfHeight) && (b.y > (enemies[index].y - enemyHalfHeight)))) {
+        explosion.setPosition(enemies[index].x, enemies[index].y);
+        explosion.explode();
+        
+        enemies[index].destroy();
+        enemies.splice(index, 1);
+      } else {
+        index++;
+      }
     }
   }
 }
