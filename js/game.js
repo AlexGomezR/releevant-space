@@ -36,11 +36,7 @@ function create() {
   player.setScale(PLAYER_SCALE);
 
   // enemy setup
-  const enemy = this.add.image(SCREEN_WIDTH / 2, SCREEN_HEIGHT, "enemy");
-  enemy.setX((SCREEN_WIDTH - enemy.width * ENEMY_SCALE) / 2);
-  enemy.setY((enemy.height * ENEMY_SCALE) / 2);
-  enemy.setScale(ENEMY_SCALE);
-  enemies.push(enemy);
+  spawnEnemy(this);
 
   //cursors map into game engine
   cursors = this.input.keyboard.createCursorKeys();
@@ -59,6 +55,10 @@ function create() {
     gravityY: 0,
     on: false,
   });
+
+  this.cameras.main.on("camerafadeoutcomplete", function() {
+    this.scene.restart();
+  })
 }
 
 /**
@@ -66,10 +66,12 @@ function create() {
  */
 function update() {
   checkEnemyCollisions();
+  checkPlayerCollisions(this);
 
   moverFondo();
   moverPlayer();
   moverBalas();
+  moverEnemigos();
   disparar(this);
 
   elapsedFrames--;
@@ -135,7 +137,7 @@ function moverBalas() {
     if (bullets[index].y < 0) {
       destroyBullet(index);
     } else {
-        index++;
+      index++;
     }
   }
 }
@@ -170,7 +172,59 @@ function checkEnemyCollisions() {
   }
 }
 
+function checkPlayerCollisions(engine) {
+  let index = 0;
+
+  while (index < enemies.length) {  
+    const enemyHalfWidth = enemies[index].width / 2 * ENEMY_SCALE;
+    const enemyHalfHeight = enemies[index].height / 2 * ENEMY_SCALE;
+
+    if ((player.x > (enemies[index].x - enemyHalfWidth) && player.x < (enemies[index].x + enemyHalfWidth)) 
+        && (player.y < (enemies[index].y + enemyHalfHeight) && (player.y > (enemies[index].y - enemyHalfHeight)))) {
+      explosion.setPosition(enemies[index].x, enemies[index].y);
+      explosion.explode();
+      
+      player.destroy();
+
+      let red = Phaser.Math.Between(50, 255);
+      let green = Phaser.Math.Between(50, 255);
+      let blue = Phaser.Math.Between(50, 255);
+
+      engine.cameras.main.fadeOut(2000, red, green, blue);
+    }
+    
+    index++;
+  }
+}
+
 function destroyBullet(index) {
   bullets[index].destroy();
   bullets.splice(index, 1);
+}
+
+function moverEnemigos() {
+  let index = 0;
+
+  while (index < enemies.length) {
+    enemies[index].setY(enemies[index].y + ENEMY_VELOCITY);
+
+    if (enemies[index].y > SCREEN_HEIGHT) {
+      enemies[index].destroy();
+      enemies.splice(index, 1);
+    } else {
+      index++;
+    }
+  }
+}
+
+function spawnEnemy(engine) {
+  for (let i = -1; i < 4; i++) {
+    const enemy = engine.add.image(SCREEN_WIDTH / 2, SCREEN_HEIGHT, "enemy");
+    enemy.setX((SCREEN_WIDTH - enemy.width * ENEMY_SCALE) / 2 - enemy.width * ENEMY_SCALE 
+        + i * enemy.width * ENEMY_SCALE);
+    enemy.setY((enemy.height * ENEMY_SCALE) / 2);
+    enemy.setScale(ENEMY_SCALE);
+
+    enemies.push(enemy);
+  }
 }
